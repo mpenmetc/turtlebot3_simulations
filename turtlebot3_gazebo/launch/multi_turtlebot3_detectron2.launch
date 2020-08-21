@@ -1,0 +1,21 @@
+<launch>
+  <!-- Arguments -->
+  <arg name="ns" default="tb3_0"/>
+  <arg name="input" default="camera/rgb/image_raw" />
+  <arg name="detection_threshold" default="0.5" />
+  <arg name="model" default="$(find detectron2_ros)/detectron2/configs/COCO-PanopticSegmentation/panoptic_fpn_R_50_3x.yaml" />
+  <arg name="visualization" default="true" />
+  <arg name="publish_rate" default="100" />
+
+  <!-- move_base -->
+  <group ns = "$(arg ns)">
+    <include file="$(find detectron2_ros)/launch/detectron2_ros.launch">
+        <arg name="input" value="/$(arg ns)/$(arg input)" />
+        <arg name="detection_threshold" value="$(arg detection_threshold)" />
+        <arg name="model" value="$(arg model)" />
+        <arg name="visualization" value="$(arg visualization)" />
+        <arg name="publish_rate" value="$(arg publish_rate)" />
+    </include>
+  </group>
+
+</launch>

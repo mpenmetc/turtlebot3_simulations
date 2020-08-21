@@ -1,5 +1,5 @@
 <launch>
-  <arg name="input" default="/tb3_1/camera/rgb/image_raw" />
+  <arg name="input" default="/tb3_0/camera/rgb/image_raw" />
   <arg name="detection_threshold" default="0.5" />
   <arg name="model" default="$(find detectron2_ros)/detectron2/configs/COCO-PanopticSegmentation/panoptic_fpn_R_50_3x.yaml" />
   <arg name="visualization" default="true" />
