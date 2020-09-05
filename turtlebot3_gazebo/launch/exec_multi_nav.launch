@@ -1,5 +1,5 @@
 <launch>
-    <arg name="open_rviz" default="true"/>
+    <arg name="open_rviz" default="false"/>
     <include file="$(find turtlebot3_gazebo)/launch/multi_turtlebot3_nav.launch">        
         <arg name="ns" value="tb3_0"/>
     </include> 
