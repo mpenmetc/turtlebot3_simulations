@@ -24,6 +24,9 @@ add_message_files(
   SensorState.msg
   VersionInfo.msg
   Sound.msg
+  BwList.msg
+  HzList.msg
+  ResourcesList.msg
 )
 
 generate_messages(
