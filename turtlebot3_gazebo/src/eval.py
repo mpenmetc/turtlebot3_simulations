@@ -125,8 +125,17 @@ def allocate_points(points):
 
 def write_dataset(stamp, x, y, z):
     with open(stamp+'.csv', 'wb') as f:
-        writer = csv.writer(f)
-        writer.writerows(izip(x, y, z))
+        writer = csv.writer(f, delimiter = ',')
+        line_num = 0
+        rows = []
+        for (a, b, c) in zip(x, y, z):
+            line_num+=1
+            if line_num == 1: 
+                rows.append([a[0],a[1],a[2], b[0],b[1],b[2],b[3], c[0],c[1],c[2]])
+            else:
+                rows.append([str(a[0]),str(a[1]),str(a[2]), str(b[0]),str(b[1]),str(b[2]),str(b[3]), str(c[0]),str(c[1]),str(c[2])])
+        writer.writerows(rows)
+            # writer.writerows([x.split(',') for x in row_str])
 def main():
     # Initializes a rospy node to let the SimpleActionClient publish and subscribe
     rospy.init_node('evaluator')
@@ -184,7 +193,7 @@ def main():
     map_pt = []     # publishTime = 1/pubFreq
     resources_data = []
 
-    resources_data.append(["RAM(percent)", "CPU(percent)", "GPU(percent"])
+    resources_data.append(["RAM(%)", "CPU(%)", "GPU(%"])
     scan_bw.append(["laser_0_bw(B/sec)", "laser_1_bw(B/sec)", "laser_2_bw(B/sec)"])
     map_pt.append(["map_0_execT(sec)", "map_1_execT(sec)", "map_2_execT(sec)", "fullMap_execT(sec)"])
 
@@ -201,18 +210,19 @@ def main():
         gpu_percent = get_gpu_memory()
         #resources_usage.gpu = gpu_percent
         
-        resources_data.append([ram_percent, cpu_percent, gpu_percent])
+        resources_data.append([round(ram_percent, 3), round(cpu_percent, 3), round(gpu_percent, 3)])
         #resources_pub.publish(resources_usage)
         try:
             #bw_values.header.frame_id = platform
             #bw_values.header.stamp = rospy.Time.now()
             
-            scan_0 = bw_scan_0.get_bw()
+            scan_0 = float(bw_scan_0.get_bw())            
             #bw_values.scan_0 = scan_0
-            scan_1 = bw_scan_1.get_bw()
+            scan_1 = float(bw_scan_1.get_bw())
             #bw_values.scan_1 = scan_1
-            scan_2 = bw_scan_2.get_bw()
+            scan_2 = float(bw_scan_2.get_bw())
             #bw_values.scan_2 = scan_2
+            
             scan_bw.append([scan_0, scan_1, scan_2])
 
             full_map = hz_map.get_hz("/map")[0]
@@ -223,7 +233,7 @@ def main():
             #hz_values.map_2 = map_2
             map_0 = hz_map_0.get_hz("/tb3_0/map")[0]
             #hz_values.map_0 = map_0
-            map_pt.append([1.0/map_0, 1.0/map_1, 1.0/map_2, 1.0/full_map])
+            map_pt.append([round(1.0/map_0, 3), round(1.0/map_1, 3), round(1.0/map_2, 3), round(1.0/full_map, 3)])
 
 
             """ bw_values.detectron_0 = bw_detectron_0.get_bw()

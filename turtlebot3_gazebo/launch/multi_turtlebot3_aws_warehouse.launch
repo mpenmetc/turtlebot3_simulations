@@ -24,10 +24,10 @@
     <arg name="paused" value="false"/>
     <arg name="use_sim_time" value="true"/>
     <arg name="gui" value="true"/>
-    <arg name="headless" value="false"/>
+    <arg name="headless" value="true"/>
     <arg name="debug" value="false"/>
   </include>  
-  <arg name="open_rviz" default="true"/>
+  <arg name="open_rviz" default="false"/>
 
   <group ns = "$(arg first_tb3)">
     <param name="robot_description" command="$(find xacro)/xacro --inorder $(find turtlebot3_description)/urdf/turtlebot3_$(arg model).urdf.xacro" />
