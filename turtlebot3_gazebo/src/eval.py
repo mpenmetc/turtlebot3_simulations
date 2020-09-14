@@ -85,7 +85,7 @@ def exec_cmd(ns,pos):
             return result
     
     except rospy.ROSInterruptException:
-        rospy.loginfo("Navigation finished.")
+        rospy.loginfo("LOCAL >> Navigation finished.")
 
 def exec_robot_points(ns, points):
     for pnt in points:
@@ -124,7 +124,7 @@ def allocate_points(points):
         points_2.append(sample[2])
 
 def write_dataset(stamp, x, y, z):
-    with open(stamp+'.csv', 'wb') as f:
+    with open(stamp+'_local.csv', 'wb') as f:
         writer = csv.writer(f, delimiter = ',')
         line_num = 0
         rows = []
@@ -184,7 +184,7 @@ def main():
     detectron_2 = rospy.Subscriber('/tb3_2/detectron2_ros/result', rospy.AnyMsg, hz_detectron_2.callback_hz) """
 
 
-    rospy.loginfo("Starting now executing the generated goals ....")
+    rospy.loginfo("LOCAL >> Starting now executing the generated goals ....")
     plan_tb0.start()
     plan_tb1.start()
     plan_tb2.start()
@@ -198,7 +198,7 @@ def main():
     scan_bw.append(["laser_0_bw(B/sec)", "laser_1_bw(B/sec)", "laser_2_bw(B/sec)"])
     map_pt.append(["map_0_execT(sec)", "map_1_execT(sec)", "map_2_execT(sec)", "fullMap_execT(sec)"])
 
-    rospy.loginfo("Starting storing the dataset in python lists ....")
+    rospy.loginfo("LOCAL >> Starting storing the dataset in python lists ....")
     try:
         while not rospy.is_shutdown():
             global scan_bw, map_pt 
@@ -251,11 +251,11 @@ def main():
                 # hz_map_0.print_hz(["/tb3_0/map"])
                 # print("################################")
     except KeyboardInterrupt:
-        rospy.loginfo("Navigation compeleted!")   
+        rospy.loginfo("LOCAL >> Navigation compeleted!")   
 
-    rospy.loginfo("Starting writing the dataset in csv file ....")
+    rospy.loginfo("LOCAL >> Starting writing the dataset in csv file ....")
     write_dataset(str(rospy.Time.now().to_nsec()), scan_bw, map_pt, resources_data)     
-    rospy.loginfo("Now dataset is ready ....")
+    rospy.loginfo("LOCAL >> Now dataset is ready ....")
     rospy.spin()
 
 if __name__ == '__main__':
