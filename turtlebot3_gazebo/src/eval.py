@@ -22,6 +22,8 @@ from itertools import izip
 
 platform = "local"
 
+goals_counter = 0
+
 resources_pub = rospy.Publisher(platform+'/resources_usage', ResourcesList, queue_size=10)
 
 bw_pub = rospy.Publisher(platform+'/bw', BwList, queue_size=10)
@@ -48,7 +50,7 @@ points_1 = []
 points_2 = []
 
 def movebase_client_cmd(ns, pos):
-
+    global goals_counter
    # Create an action client called "move_base" with action definition file "MoveBaseAction"
     client = actionlib.SimpleActionClient(ns+'move_base',MoveBaseAction)
  
@@ -67,6 +69,7 @@ def movebase_client_cmd(ns, pos):
 
    # Sends the goal to the action server.
     client.send_goal(goal)
+    goals_counter += 1
    # Waits for the server to finish performing the action.
     wait = client.wait_for_result()
    # If the result doesn't arrive, assume the Server is not available
@@ -214,10 +217,10 @@ def main():
                 map_2 = hz_map_2.get_hz("/tb3_2/map")[0]                
                 map_0 = hz_map_0.get_hz("/tb3_0/map")[0]               
                 map_pt.append([round(1.0/map_0, 3), round(1.0/map_1, 3), round(1.0/map_2, 3), round(1.0/full_map, 3)])
-               
+                print("## Goals_Counter: %i", goals_counter)
             except:
-                print(map_pt)
-                print("################################")
+                # print(map_pt)
+                # print("################################")
                 pass                
     except KeyboardInterrupt:
         rospy.loginfo("LOCAL >> Navigation compeleted!")   
