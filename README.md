@@ -1,51 +1,93 @@
-# TurtleBot3
-<img src="https://github.com/ROBOTIS-GIT/emanual/blob/master/assets/images/platform/turtlebot3/logo_turtlebot3.png" width="300">
+# AWS Offloading for Multi-Turtlebot3 Gazebo Simulation
 
-## ROS 1 Packages for TurtleBot3 Simulations
-|develop|master|Kinetic + Ubuntu Xenial|Melodic + Ubuntu Bionic|
-|:---:|:---:|:---:|:---:|
-|[![Build Status](https://travis-ci.org/ROBOTIS-GIT/turtlebot3_simulations.svg?branch=develop)](https://travis-ci.org/ROBOTIS-GIT/turtlebot3_simulations)|[![Build Status](https://travis-ci.org/ROBOTIS-GIT/turtlebot3_simulations.svg?branch=master)](https://travis-ci.org/ROBOTIS-GIT/turtlebot3_simulations)|[![Build Status](https://travis-ci.org/ROBOTIS-GIT/turtlebot3_simulations.svg?branch=kinetic-devel)](https://travis-ci.org/ROBOTIS-GIT/turtlebot3_simulations)|[![Build Status](https://travis-ci.org/ROBOTIS-GIT/turtlebot3_simulations.svg?branch=melodic-devel)](https://travis-ci.org/ROBOTIS-GIT/turtlebot3_simulations)|
+![image](https://user-images.githubusercontent.com/29764281/93975015-ffee5880-fd76-11ea-89a0-7606930ab8d1.png)
 
-## ROS 2 Packages for TurtleBot3 Simulations
-|ros2-devel|ros2|Dashing + Ubuntu Bionic|
-|:---:|:---:|:---:|
-|[![Build Status](https://travis-ci.org/ROBOTIS-GIT/turtlebot3_simulations.svg?branch=ros2-devel)](https://travis-ci.org/ROBOTIS-GIT/turtlebot3_simulations)|[![Build Status](https://travis-ci.org/ROBOTIS-GIT/turtlebot3_simulations.svg?branch=ros2)](https://travis-ci.org/ROBOTIS-GIT/turtlebot3_simulations)|[![Build Status](https://travis-ci.org/ROBOTIS-GIT/turtlebot3_simulations.svg?branch=dashing-devel)](https://travis-ci.org/ROBOTIS-GIT/turtlebot3_simulations)|
 
-## ROBOTIS e-Manual for TurtleBot3
-- [ROBOTIS e-Manual for TurtleBot3](http://turtlebot3.robotis.com/)
+## 1. Prerequisites
+### 1.1 **Ubuntu 18.04** and **ROS**
 
-## Wiki for turtlebot3_simulations Packages
-- http://wiki.ros.org/turtlebot3_simulations (metapackage)
-- http://wiki.ros.org/turtlebot3_fake
-- http://wiki.ros.org/turtlebot3_gazebo
+### 1.2. **Install ROS Nav Stack**
+```
+sudo apt install ros-melodic-navigation ros-melodic-map-server ros-melodic-move-base 
+```
+### 1.3. **Install Detectron2 Object Detector for ROS**
+It is necessary to install Detectron2 [requirements](https://github.com/facebookresearch/detectron2/blob/master/INSTALL.md) in a python *virtual environment* as it requires `Python 3.6` and ROS works with `Python 2.7`
 
-## Open Source related to TurtleBot3
-- [turtlebot3](https://github.com/ROBOTIS-GIT/turtlebot3)
-- [turtlebot3_msgs](https://github.com/ROBOTIS-GIT/turtlebot3_msgs)
-- [turtlebot3_simulations](https://github.com/ROBOTIS-GIT/turtlebot3_simulations)
-- [turtlebot3_applications_msgs](https://github.com/ROBOTIS-GIT/turtlebot3_applications_msgs)
-- [turtlebot3_applications](https://github.com/ROBOTIS-GIT/turtlebot3_applications)
-- [turtlebot3_autorace](https://github.com/ROBOTIS-GIT/turtlebot3_autorace)
-- [turtlebot3_deliver](https://github.com/ROBOTIS-GIT/turtlebot3_deliver)
-- [hls_lfcd_lds_driver](https://github.com/ROBOTIS-GIT/hls_lfcd_lds_driver)
-- [robotis_manipulator](https://github.com/ROBOTIS-GIT/robotis_manipulator)
-- [open_manipulator_msgs](https://github.com/ROBOTIS-GIT/open_manipulator_msgs)
-- [open_manipulator](https://github.com/ROBOTIS-GIT/open_manipulator)
-- [open_manipulator_simulations](https://github.com/ROBOTIS-GIT/open_manipulator_simulations)
-- [open_manipulator_perceptions](https://github.com/ROBOTIS-GIT/open_manipulator_perceptions)
-- [open_manipulator_with_tb3_msgs](https://github.com/ROBOTIS-GIT/open_manipulator_with_tb3_msgs)
-- [open_manipulator_with_tb3](https://github.com/ROBOTIS-GIT/open_manipulator_with_tb3)
-- [open_manipulator_with_tb3_simulations](https://github.com/ROBOTIS-GIT/open_manipulator_with_tb3_simulations)
-- [dynamixel_sdk](https://github.com/ROBOTIS-GIT/DynamixelSDK)
-- [dynamixel_workbench](https://github.com/ROBOTIS-GIT/dynamixel-workbench)
-- [OpenCR-Hardware](https://github.com/ROBOTIS-GIT/OpenCR-Hardware)
-- [OpenCR](https://github.com/ROBOTIS-GIT/OpenCR)
+1. Install python Virtual Environment
+```bash
+sudo apt-get install python-pip
+sudo pip install virtualenv
+mkdir ~/.virtualenvs
+sudo pip install virtualenvwrapper
+export WORKON_HOME=~/.virtualenvs
+echo '. /usr/local/bin/virtualenvwrapper.sh' >> ~/.bashrc 
+```
 
-## Documents and Videos related to TurtleBot3
-- [ROBOTIS e-Manual for TurtleBot3](http://turtlebot3.robotis.com/)
-- [ROBOTIS e-Manual for OpenManipulator](http://emanual.robotis.com/docs/en/platform/openmanipulator/)
-- [ROBOTIS e-Manual for Dynamixel SDK](http://emanual.robotis.com/docs/en/software/dynamixel/dynamixel_sdk/overview/)
-- [ROBOTIS e-Manual for Dynamixel Workbench](http://emanual.robotis.com/docs/en/software/dynamixel/dynamixel_workbench/)
-- [Website for TurtleBot Series](http://www.turtlebot.com/)
-- [e-Book for TurtleBot3](https://community.robotsource.org/t/download-the-ros-robot-programming-book-for-free/51/)
-- [Videos for TurtleBot3 ](https://www.youtube.com/playlist?list=PLRG6WP3c31_XI3wlvHlx2Mp8BYqgqDURU)
+2. Creating Virtual Environment
+```bash
+mkvirtualenv --python=python3 detectron2_ros
+```
+
+3. [Install the dependencies in the virtual environment](https://github.com/facebookresearch/detectron2/blob/master/INSTALL.md)
+
+```bash
+pip install -U torch==1.4+cu100 torchvision==0.5+cu100 -f https://download.pytorch.org/whl/torch_stable.html
+pip install cython pyyaml==5.1
+pip install -U 'git+https://github.com/cocodataset/cocoapi.git#subdirectory=PythonAPI'
+pip install detectron2 -f https://dl.fbaipublicfiles.com/detectron2/wheels/cu100/index.html
+pip install opencv-python
+pip install rospkg
+```
+
+## 2. Build & Install
+Clone the repository (offloading-dev branch), install dependencies, and build the workspace:
+
+```
+cd ~/catkin_ws/src
+rm -rf *
+git clone https://github.com/mhaboali/turtlebot3_simulations.git
+cd turtlebot3_simulations
+git checkout offloading-dev
+cd ../
+rosdep install --from-paths src --ignore-src --rosdistro=melodic -y
+catkin_make -DCATKIN_ENABLE_TESTING=False -DCMAKE_BUILD_TYPE=Release
+catkin_make install
+source ~/catkin_ws/devel/setup.bash
+```
+
+## 3. Usage Instructions
+You have to open 5 different terminals and write one command per each terminal to get the full system running
+
+### Start the multi-turtlebot3 Gazebo simulation
+
+```bash
+roslaunch turtlebot3_gazebo multi_turtlebot3_aws_warehouse.launch
+```
+### Start the multi-turtlebot3 Gmapping SLAM
+
+```bash
+roslaunch turtlebot3_gazebo exec_multi_slam.launch
+```
+### Start the multi-turtlebot3 Navigation Stack
+
+```bash
+roslaunch turtlebot3_gazebo exec_multi_nav.launch
+```
+### Start the multi-turtlebot3 detectron2 
+Open a new terminal and use the virtual environment created.
+```bash
+workon detectron2_ros
+roslaunch turtlebot3_gazebo exec_multi_detectron2.launch
+```
+
+### Start the multi-turtlebot3 tasks allocator and dataset-writer node
+
+```bash
+mkdir ~/catkin_ws/dataset
+source ~/catkin_ws/devel/setup.bash
+cd ~/catkin_ws/dataset
+export NUM_GOALS_PER_ROBOT=10
+rosrun turtlebot3_gazebo eval.py $NUM_GOALS_PER_ROBOT
+
+And press Ctrl + c when you want to write the dataset CSV file
+```
