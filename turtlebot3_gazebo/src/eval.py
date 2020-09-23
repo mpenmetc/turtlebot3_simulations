@@ -22,14 +22,8 @@ from itertools import izip
 
 platform = "local"
 
+## Counts hom many goals sent to all robots
 goals_counter = 0
-
-resources_pub = rospy.Publisher(platform+'/resources_usage', ResourcesList, queue_size=10)
-
-bw_pub = rospy.Publisher(platform+'/bw', BwList, queue_size=10)
-
-resources_usage = ResourcesList()
-bw_values = BwList()
 
 def get_gpu_memory():
   _output_to_list = lambda x: x.decode('ascii').split('\n')[:-1]
@@ -40,15 +34,15 @@ def get_gpu_memory():
   memory_free_values = [int(x.split()[0]) for i, x in enumerate(memory_free_info)]
   return (11175.0 - memory_free_values[0])/11175.0
 
-
-
-# seed random number generator
+# seed random number generator for generating goals
 seed(1)
 
+## Array of goals for each robot
 points_0 = []
 points_1 = []
 points_2 = []
 
+## move_base action client that sends goals for the planners
 def movebase_client_cmd(ns, pos):
     global goals_counter
    # Create an action client called "move_base" with action definition file "MoveBaseAction"
@@ -80,6 +74,7 @@ def movebase_client_cmd(ns, pos):
     # Result of executing the action
         return client.get_result()   
 
+## execute one goal for one robot
 def exec_cmd(ns,pos):
     try:
         result = movebase_client_cmd(ns, pos)
@@ -90,16 +85,22 @@ def exec_cmd(ns,pos):
     except rospy.ROSInterruptException:
         rospy.loginfo("LOCAL >> Navigation finished.")
 
+## execute all goals for one robot
 def exec_robot_points(ns, points):
     for pnt in points:
         res = exec_cmd(ns, pnt)        
 
+## Goals generation functions
+#######################################
+## Generate 3 different values as x coordinates for each robot
 def gen_x(min, max):
     return randint(min, max, 3)
 
+## Generate 3 different values as y coordinates for each robot
 def gen_y(min, max):
    return random.sample(xrange(min, max), 3)
 
+## Generate packet of 3 unique points, one goal for each robot at a time
 def gen_oneSample_points():
     mode = randint(0,1,1)
     points = []
@@ -113,6 +114,7 @@ def gen_oneSample_points():
         y_list = gen_y(-9,0)
     return zip(x_list,y_list)
 
+## Generate n packets of 3 points, n goals for each robot.
 def gen_nSamples_points(n):
     points = []
     for i in range(0,n):
@@ -120,12 +122,14 @@ def gen_nSamples_points(n):
     print(points)
     return points
 
+## allocate each packet's points to each robot
 def allocate_points(points):
     for sample in points:
         points_0.append(sample[0])
         points_1.append(sample[1])
         points_2.append(sample[2])
-        
+
+## Write the dataset in CSV files
 def write_dataset(stamp, x, y, y_bw, z):
     with open(stamp+'_local.csv', 'wb') as f:
         writer = csv.writer(f, delimiter = ',')
@@ -140,22 +144,34 @@ def write_dataset(stamp, x, y, y_bw, z):
         print(rows)
         writer.writerows(rows)
             # writer.writerows([x.split(',') for x in row_str])
+
 def main():
     # Initializes a rospy node to let the SimpleActionClient publish and subscribe
     rospy.init_node('local_evaluator')
+    ## Takes how many goals per each robot from the user
     points = gen_nSamples_points(int(sys.argv[1]))
+    ## Allocate goals points for each robot
     allocate_points(points)
+    
+    ## Creating a navigation thread for each robot
+    #######################################################
     plan_tb0 = threading.Thread(target=exec_robot_points, args=("/tb3_0/", points_0))
     plan_tb1 = threading.Thread(target=exec_robot_points, args=("/tb3_1/", points_1))
     plan_tb2 = threading.Thread(target=exec_robot_points, args=("/tb3_2/", points_2))
+    #######################################################
 
+    ## Creating a laser scan subscriber for each robot to get it BW
+    #################################################################
     bw_scan_0 = rostopic.ROSTopicBandwidth()
     scan_0 = rospy.Subscriber('/tb3_0/scan', rospy.AnyMsg, bw_scan_0.callback)
     bw_scan_1 = rostopic.ROSTopicBandwidth()
     scan_1 = rospy.Subscriber('/tb3_1/scan', rospy.AnyMsg, bw_scan_1.callback)
     bw_scan_2 = rostopic.ROSTopicBandwidth()
     scan_2 = rospy.Subscriber('/tb3_2/scan', rospy.AnyMsg, bw_scan_2.callback) 
+    #################################################################
 
+    ## Creating a map subscriber for each robot to get it BW
+    #################################################################
     bw_map = rostopic.ROSTopicBandwidth()
     full_map = rospy.Subscriber('/map', rospy.AnyMsg, bw_map.callback)
     bw_map_0 = rostopic.ROSTopicBandwidth()
@@ -164,7 +180,10 @@ def main():
     map_1 = rospy.Subscriber('/tb3_1/map', rospy.AnyMsg, bw_map_1.callback)
     bw_map_2 = rostopic.ROSTopicBandwidth()
     map_2 = rospy.Subscriber('/tb3_2/map', rospy.AnyMsg, bw_map_2.callback)
-    
+    #################################################################
+
+    ## Creating a map subscriber for each robot to get it publish frequency
+    #######################################################################
     hz_map = rostopic.ROSTopicHz(-1)
     hzmap_ = rospy.Subscriber('/map', rospy.AnyMsg, hz_map.callback_hz, callback_args='/map')
     hz_map_0 = rostopic.ROSTopicHz(-1)
@@ -173,18 +192,23 @@ def main():
     hzmap_1 = rospy.Subscriber('/tb3_1/map', rospy.AnyMsg, hz_map_1.callback_hz, callback_args='/tb3_1/map')
     hz_map_2 = rostopic.ROSTopicHz(-1)
     hzmap_2 = rospy.Subscriber('/tb3_2/map', rospy.AnyMsg, hz_map_2.callback_hz, callback_args='/tb3_2/map')
+    #######################################################################
 
     rospy.loginfo("LOCAL >> Starting now executing the generated goals ....")
+    
+    ## Start executing all navigation tasks
+    ########################################
     plan_tb0.start()
     plan_tb1.start()
     plan_tb2.start()
+    ########################################
 
-    global resources_usage, bw_values, resources_pub, bw_pub
-    scan_bw = []    # bandwidth = datasize/sec
-    map_bw = []     # publishTime = 1/pubFreq
-    map_pt = []
-    resources_data = []
+    scan_bw = []                # bandwidth = datasize/sec
+    map_bw = []     
+    map_pt = []                 # publishTime = 1/pubFreq
+    resources_data = []         # CPU, RAM, GPU precentages
 
+    ## Adding the columns names for our dataset file
     resources_data.append([platform + "_RAM(%)", platform + "_CPU(%)", platform + "_GPU(%)"])
     scan_bw.append([platform + "_laser_0_bw(KB/sec)", platform + "_laser_1_bw(KB/sec)", platform + "_laser_2_bw(KB/sec)"])
     map_bw.append([platform + "_map_0_bw(KB/sec)", platform + "_map_1_bw(KB/sec)", platform + "_map_2_bw(KB/sec)", platform + "_fullMap_bw(KB/sec)"])
@@ -194,29 +218,39 @@ def main():
     try:
         while not rospy.is_shutdown():            
             try:
+                ## Get all resources usage and store in a global 2d array
+                ##################################################################
                 cpu_percent = ps.cpu_percent(interval=0.1)                
                 ram_percent = ps.virtual_memory()[2]
-                gpu_percent = get_gpu_memory()
-                
-                resources_data.append([round(ram_percent, 3), round(cpu_percent, 3), round(gpu_percent, 3)])
-               
+                gpu_percent = get_gpu_memory()                
+                resources_data.append([round(ram_percent, 3), round(cpu_percent, 3), \
+                    round(gpu_percent, 3)])                
+                ##################################################################
+
+                ## Get all laser scan and map BWs in KB/sec and store in a global 2d array
+                ##########################################################################
                 scan_0 = float(bw_scan_0.get_bw() / 1000.0)            
                 scan_1 = float(bw_scan_1.get_bw() / 1000.0)
-                scan_2 = float(bw_scan_2.get_bw() / 1000.0)
-                
+                scan_2 = float(bw_scan_2.get_bw() / 1000.0)                
                 scan_bw.append([scan_0, scan_1, scan_2])
 
                 full_map = float(bw_map.get_bw() / 1000.0)
                 map_0 = float(bw_map_0.get_bw() / 1000.0)            
                 map_1 = float(bw_map_1.get_bw() / 1000.0)
                 map_2 = float(bw_map_2.get_bw() / 1000.0)
-                map_bw.append([round(map_0, 3), round(map_1, 3), round(map_2, 3), round(full_map, 3)])
+                map_bw.append([round(map_0, 3), round(map_1, 3), round(map_2, 3), \
+                    round(full_map, 3)])
+                ##########################################################################
 
+                ## Get all map Execution Time in sec and store in a global 2d array
+                ##########################################################################
                 full_map = hz_map.get_hz("/map")[0]                
                 map_1 = hz_map_1.get_hz("/tb3_1/map")[0]                
                 map_2 = hz_map_2.get_hz("/tb3_2/map")[0]                
                 map_0 = hz_map_0.get_hz("/tb3_0/map")[0]               
-                map_pt.append([round(1.0/map_0, 3), round(1.0/map_1, 3), round(1.0/map_2, 3), round(1.0/full_map, 3)])
+                map_pt.append([round(1.0/map_0, 3), round(1.0/map_1, 3), round(1.0/map_2, 3), \
+                    round(1.0/full_map, 3)])
+                ##########################################################################
                 print("## Goals_Counter: %i", goals_counter)
             except:
                 # print(map_pt)
