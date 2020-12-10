@@ -100,6 +100,7 @@ All the previous steps explained how to run the entire system completely on the 
 ```bash
 ssh -i "~/.ssh/Awstest.pem" openvpnas@ec2-3-22-184-43.us-east-2.compute.amazonaws.com
 ```
+### Source ROS on aws - melodic
 ### 3. Run these commands initially in each of them
 ```bash
 export ROS_MASTER_URI=http://172.31.4.86:11311
